@@ -40,8 +40,8 @@ class EntityChainUIController extends EntityDefaultUIController {
     $items[$this->path . '/add'] = array(
       'title' => 'Add a chain',
       'description' => 'Add a new chain',
-      'page callback'  => 'entity_chain_add_page',
-      'access callback'  => 'entity_chain_access',
+      'page callback'  => 'entity_chains_add_page',
+      'access callback'  => 'entity_chains_access',
       'access arguments' => array('edit'),
       'type' => MENU_NORMAL_ITEM,
       'weight' => 20,
@@ -51,12 +51,12 @@ class EntityChainUIController extends EntityDefaultUIController {
     );
     
     // Add menu items to add each different type of entity.
-    foreach (entity_chain_get_types() as $type) {
+    foreach (entity_chains_get_types() as $type) {
       $items[$this->path . '/add/' . $type->type] = array(
         'title' => 'Add ' . $type->label,
-        'page callback' => 'entity_chain_form_wrapper',
-        'page arguments' => array(entity_chain_create(array('type' => $type->type))),
-        'access callback' => 'entity_chain_access',
+        'page callback' => 'entity_chains_form_wrapper',
+        'page arguments' => array(entity_chains_create(array('type' => $type->type))),
+        'access callback' => 'entity_chains_access',
         'access arguments' => array('edit', 'edit ' . $type->type),
         'file' => 'entity_chains.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
@@ -65,9 +65,9 @@ class EntityChainUIController extends EntityDefaultUIController {
 
     // Loading and editing chain entities
     $items[$this->path . '/chain/' . $wildcard] = array(
-      'page callback' => 'entity_chain_form_wrapper',
+      'page callback' => 'entity_chains_form_wrapper',
       'page arguments' => array($id_count + 1),
-      'access callback' => 'entity_chain_access',
+      'access callback' => 'entity_chains_access',
       'access arguments' => array('edit', $id_count + 1),
       'weight' => 0,
       'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -83,9 +83,9 @@ class EntityChainUIController extends EntityDefaultUIController {
     
     $items[$this->path . '/chain/' . $wildcard . '/delete'] = array(
       'title' => 'Delete',
-      'page callback' => 'entity_chain_delete_form_wrapper',
+      'page callback' => 'entity_chains_delete_form_wrapper',
       'page arguments' => array($id_count + 1),
-      'access callback' => 'entity_chain_access',
+      'access callback' => 'entity_chains_access',
       'access arguments' => array('edit', $id_count + 1),
       'type' => MENU_LOCAL_TASK,
       'context' => MENU_CONTEXT_INLINE,
@@ -97,11 +97,11 @@ class EntityChainUIController extends EntityDefaultUIController {
     // Menu item for viewing chains
     $items['chain/' . $wildcard] = array(
       //'title' => 'Title',
-      'title callback' => 'entity_chain_page_title',
+      'title callback' => 'entity_chains_page_title',
       'title arguments' => array(1),
-      'page callback' => 'entity_chain_page_view',
+      'page callback' => 'entity_chains_page_view',
       'page arguments' => array(1),
-      'access callback' => 'entity_chain_access',
+      'access callback' => 'entity_chains_access',
       'access arguments' => array('view', 1),
       'type' => MENU_CALLBACK,
     );
@@ -122,55 +122,55 @@ class EntityChainUIController extends EntityDefaultUIController {
       drupal_goto($item['href']);
     }    
         
-    return theme('entity_chain_add_list', array('content' => $content));
+    return theme('entity_chains_add_list', array('content' => $content));
   }
   
 }
 
 
 /**
- * Form callback wrapper: create or edit a entity_chain.
+ * Form callback wrapper: create or edit a entity_chains.
  *
- * @param $entity_chain
+ * @param $entity_chains
  *   The chain object being edited by this form.
  *
- * @see entity_chain_edit_form()
+ * @see entity_chains_edit_form()
  */
-function entity_chain_form_wrapper($entity_chain) {
+function entity_chains_form_wrapper($entity_chains) {
   // Add the breadcrumb for the form's location.
-  entity_chain_set_breadcrumb();
-  return drupal_get_form('entity_chain_edit_form', $entity_chain);
+  entity_chains_set_breadcrumb();
+  return drupal_get_form('entity_chains_edit_form', $entity_chains);
 }
 
 
 /**
- * Form callback wrapper: delete a entity_chain.
+ * Form callback wrapper: delete a entity_chains.
  *
- * @param $entity_chain
+ * @param $entity_chains
  *   The chain object being edited by this form.
  *
- * @see entity_chain_edit_form()
+ * @see entity_chains_edit_form()
  */
-function entity_chain_delete_form_wrapper($entity_chain) {
+function entity_chains_delete_form_wrapper($entity_chains) {
   // Add the breadcrumb for the form's location.
   //chain_set_breadcrumb();
-  return drupal_get_form('entity_chain_delete_form', $entity_chain);
+  return drupal_get_form('entity_chains_delete_form', $entity_chains);
 }
 
 
 /**
- * Form callback: create or edit a entity_chain.
+ * Form callback: create or edit a entity_chains.
  *
- * @param $entity_chain
+ * @param $entity_chains
  *   The chain object to edit or for a create form an empty chain object
  *     with only a chain type defined.
  */
-function entity_chain_edit_form($form, &$form_state, $entity_chain) {
+function entity_chains_edit_form($form, &$form_state, $entity_chains) {
   // Add the default field elements.
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Chain Name'),
-    '#default_value' => isset($entity_chain->name) ? $entity_chain->name : '',
+    '#default_value' => isset($entity_chains->name) ? $entity_chains->name : '',
     '#maxlength' => 255,
     '#required' => TRUE,
     '#weight' => -5,
@@ -180,12 +180,12 @@ function entity_chain_edit_form($form, &$form_state, $entity_chain) {
   $form['data']['sample_data'] = array(
     '#type' => 'checkbox',
     '#title' => t('An interesting chain switch'),
-    '#default_value' => isset($entity_chain->data['sample_data']) ? $entity_chain->data['sample_data'] : 1,
+    '#default_value' => isset($entity_chains->data['sample_data']) ? $entity_chains->data['sample_data'] : 1,
   );
 
   // Add the field related form elements.
-  $form_state['entity_chain'] = $entity_chain;
-  field_attach_form('entity_chain', $entity_chain, $form, $form_state);
+  $form_state['entity_chains'] = $entity_chains;
+  field_attach_form('entity_chains', $entity_chains, $form, $form_state);
 
   $form['actions'] = array(
     '#type' => 'container',
@@ -204,22 +204,22 @@ function entity_chain_edit_form($form, &$form_state, $entity_chain) {
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save chain'),
-    '#submit' => $submit + array('entity_chain_edit_form_submit'),
+    '#submit' => $submit + array('entity_chains_edit_form_submit'),
   );
   
-  if (!empty($entity_chain->name)) {
+  if (!empty($entity_chains->name)) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete chain'),
       '#suffix' => l(t('Cancel'), 'admin/content/chains'),
-      '#submit' => $submit + array('entity_chain_form_submit_delete'),
+      '#submit' => $submit + array('entity_chains_form_submit_delete'),
       '#weight' => 45,
     );
   }
 
   // We append the validate handler to #validate in case a form callback_wrapper
   // is used to add validate handlers earlier.
-  $form['#validate'][] = 'entity_chain_edit_form_validate';
+  $form['#validate'][] = 'entity_chains_edit_form_validate';
   return $form;
 }
 
@@ -227,11 +227,11 @@ function entity_chain_edit_form($form, &$form_state, $entity_chain) {
 /**
  * Form API validate callback for the chain form
  */
-function entity_chain_edit_form_validate(&$form, &$form_state) {
-  $entity_chain = $form_state['entity_chain'];
+function entity_chains_edit_form_validate(&$form, &$form_state) {
+  $entity_chains = $form_state['entity_chains'];
   
   // Notify field widgets to validate their data.
-  field_attach_form_validate('entity_chain', $entity_chain, $form, $form_state);
+  field_attach_form_validate('entity_chains', $entity_chains, $form, $form_state);
 }
 
 
@@ -240,19 +240,19 @@ function entity_chain_edit_form_validate(&$form, &$form_state) {
  * 
  * @todo remove hard-coded link
  */
-function entity_chain_edit_form_submit(&$form, &$form_state) {
+function entity_chains_edit_form_submit(&$form, &$form_state) {
   
-  $entity_chain = entity_ui_controller('entity_chain')->entityFormSubmitBuildEntity($form, $form_state);
+  $entity_chains = entity_ui_controller('entity_chains')->entityFormSubmitBuildEntity($form, $form_state);
   // Save the chain and go back to the list of chains
   
   // Add in created and changed times.
-  if ($entity_chain->is_new = isset($entity_chain->is_new) ? $entity_chain->is_new : 0){
-    $entity_chain->created = time();
+  if ($entity_chains->is_new = isset($entity_chains->is_new) ? $entity_chains->is_new : 0){
+    $entity_chains->created = time();
   }
 
-  $entity_chain->changed = time();
+  $entity_chains->changed = time();
   
-  $entity_chain->save();
+  $entity_chains->save();
   $form_state['redirect'] = 'admin/content/chains';
 }
 
@@ -261,26 +261,26 @@ function entity_chain_edit_form_submit(&$form, &$form_state) {
  * 
  * @todo Remove hard-coded path
  */
-function entity_chain_form_submit_delete(&$form, &$form_state) {
-  $form_state['redirect'] = 'admin/content/chains/chain/' . $form_state['entity_chain']->entity_chain_id . '/delete';
+function entity_chains_form_submit_delete(&$form, &$form_state) {
+  $form_state['redirect'] = 'admin/content/chains/chain/' . $form_state['entity_chains']->entity_chains_id . '/delete';
 }
 
 
 /**
- * Form callback: confirmation form for deleting a entity_chain.
+ * Form callback: confirmation form for deleting a entity_chains.
  *
- * @param $entity_chain
+ * @param $entity_chains
  *   The chain to delete
  *
  * @see confirm_form()
  */
-function entity_chain_delete_form($form, &$form_state, $entity_chain) {
-  $form_state['entity_chain'] = $entity_chain;
+function entity_chains_delete_form($form, &$form_state, $entity_chains) {
+  $form_state['entity_chains'] = $entity_chains;
 
-  $form['#submit'][] = 'entity_chain_delete_form_submit';
+  $form['#submit'][] = 'entity_chains_delete_form_submit';
 
   $form = confirm_form($form,
-    t('Are you sure you want to delete chain %name?', array('%name' => $entity_chain->name)),
+    t('Are you sure you want to delete chain %name?', array('%name' => $entity_chains->name)),
     'admin/content/chains/chain',
     '<p>' . t('This action cannot be undone.') . '</p>',
     t('Delete'),
@@ -292,15 +292,15 @@ function entity_chain_delete_form($form, &$form_state, $entity_chain) {
 }
 
 /**
- * Submit callback for entity_chain_delete_form
+ * Submit callback for entity_chains_delete_form
  */
-function entity_chain_delete_form_submit($form, &$form_state) {
-  $entity_chain = $form_state['entity_chain'];
+function entity_chains_delete_form_submit($form, &$form_state) {
+  $entity_chains = $form_state['entity_chains'];
 
-  entity_chain_delete($entity_chain);
+  entity_chains_delete($entity_chains);
 
-  drupal_set_message(t('The chain %name has been deleted.', array('%name' => $entity_chain->name)));
-  watchdog('entity_chain', 'Deleted chain %name.', array('%name' => $entity_chain->name));
+  drupal_set_message(t('The chain %name has been deleted.', array('%name' => $entity_chains->name)));
+  watchdog('entity_chains', 'Deleted chain %name.', array('%name' => $entity_chains->name));
 
   $form_state['redirect'] = 'admin/content/chains';
 }
@@ -312,8 +312,8 @@ function entity_chain_delete_form_submit($form, &$form_state) {
  *
  * @todo Pass this through a proper theme function
  */
-function entity_chain_add_page() {
-  $controller = entity_ui_controller('entity_chain');
+function entity_chains_add_page() {
+  $controller = entity_ui_controller('entity_chains');
   return $controller->addPage();
 }
 
@@ -323,7 +323,7 @@ function entity_chain_add_page() {
  *
  * @ingroup themeable
  */
-function theme_entity_chain_add_list($variables) {
+function theme_entity_chains_add_list($variables) {
   $content = $variables['content'];
   $output = '';
   if ($content) {
@@ -336,7 +336,7 @@ function theme_entity_chain_add_list($variables) {
   }
   else {
     if (user_access('administer chain types')) {
-      $output = '<p>' . t('Chain Entities cannot be added because you have not created any chain types yet. Go to the <a href="@create-entity-chain-type">chain type creation page</a> to add a new chain type.', array('@create-entity-chain-type' => url('admin/structure/chain_types/add'))) . '</p>';
+      $output = '<p>' . t('Chain Entities cannot be added because you have not created any chain types yet. Go to the <a href="@create-entity-chain-type">chain type creation page</a> to add a new chain type.', array('@create-entity-chain-type' => url('admin/structure/chains/add'))) . '</p>';
     }
     else {
       $output = '<p>' . t('No chain types have been created yet for you to use.') . '</p>';
@@ -353,7 +353,7 @@ function theme_entity_chain_add_list($variables) {
 /**
  * Sets the breadcrumb for administrative chain pages.
  */
-function entity_chain_set_breadcrumb() {
+function entity_chains_set_breadcrumb() {
   $breadcrumb = array(
     l(t('Home'), '<front>'),
     l(t('Administration'), 'admin'),

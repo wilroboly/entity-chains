@@ -10,27 +10,27 @@
 /**
  * Implements hook_schema().
  */
-function entity_chain_schema() {
+function entity_chains_schema() {
   $schema = array();
 
-  $schema['entity_chain'] = array(
+  $schema['entity_chains'] = array(
     'description' => 'The base table for chain entities.',
     'fields' => array(
-      'entity_chain_id' => array(
-        'description' => 'Primary Key: Identifier for a entity_chain.',
+      'entity_chains_id' => array(
+        'description' => 'Primary Key: Identifier for a entity_chains.',
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'type' => array(
-        'description' => 'The {entity_chain_type}.type of this entity_chain.',
+        'description' => 'The {entity_chains_type}.type of this entity_chains.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
       'language' => array(
-        'description' => 'The language of the entity_chain.',
+        'description' => 'The language of the entity_chains.',
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
@@ -63,13 +63,13 @@ function entity_chain_schema() {
         'description' => 'A serialized array of additional data.',
       ),
     ),
-    'primary key' => array('entity_chain_id'),
+    'primary key' => array('entity_chains_id'),
     'indexes' => array(
       'type' => array('type'),
     ),
   );
 
-  $schema['entity_chain_type'] = array(
+  $schema['entity_chains_type'] = array(
     'description' => 'Stores information about defined chain types.',
     'fields' => array(
       'id' => array(

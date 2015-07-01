@@ -52,7 +52,7 @@ Currently, I am overwriting the create function to add some extra info. If you s
 the $data variable and save extra data in serialized form (and not adding new columns
 to your table)  - just like the chain entity does with the checkbox - there is nothing
 else you need to do. If you have added new columns you need to add support for them
-in $entity_chain->create but not necessarily $entity_chain->save unless you are doing something specific.
+in $entity_chains->create but not necessarily $entity_chains->save unless you are doing something specific.
 
 3. Finally you can play around within the theming for your entity by looking into entity_chains.tpl.php and
 entity-chain-sample-data.tpl.php

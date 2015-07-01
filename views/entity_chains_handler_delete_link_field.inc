@@ -7,7 +7,7 @@
  */
 
 
-class entity_chain_handler_delete_link_field extends entity_chain_handler_link_field {
+class entity_chains_handler_delete_link_field extends entity_chains_handler_link_field {
   function construct() {
     parent::construct();
     $this->additional_fields['type'] = 'type';
@@ -19,13 +19,13 @@ class entity_chain_handler_delete_link_field extends entity_chain_handler_link_f
     
     //Creating a dummy chain to check access against
     $dummy_chain = (object) array('type' => $type);
-    if (!entity_chain_access('edit', $dummy_chain)) {
+    if (!entity_chains_access('edit', $dummy_chain)) {
       return;
     }
     
     $text = !empty($this->options['text']) ? $this->options['text'] : t('delete');
-    $entity_chain_id = $values->{$this->aliases['entity_chain_id']};
+    $entity_chains_id = $values->{$this->aliases['entity_chains_id']};
     
-    return l($text, 'admin/content/chains/chain/' . $entity_chain_id . '/delete');
+    return l($text, 'admin/content/chains/chain/' . $entity_chains_id . '/delete');
   }
 }

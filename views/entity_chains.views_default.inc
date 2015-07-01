@@ -9,35 +9,35 @@
 /**
  * Implements hook_views_data()
  */
-function entity_chain_views_data_alter(&$data) { 
-  $data['entity_chain']['link_chain'] = array(
+function entity_chains_views_data_alter(&$data) { 
+  $data['entity_chains']['link_chain'] = array(
     'field' => array(
       'title' => t('Link'),
-      'help' => t('Provide a link to the entity_chain.'),
-      'handler' => 'entity_chain_handler_link_field',
+      'help' => t('Provide a link to the entity_chains.'),
+      'handler' => 'entity_chains_handler_link_field',
     ),
   );
-  $data['entity_chain']['edit_chain'] = array(
+  $data['entity_chains']['edit_chain'] = array(
     'field' => array(
       'title' => t('Edit Link'),
-      'help' => t('Provide a link to the edit form for the entity_chain.'),
-      'handler' => 'entity_chain_handler_edit_link_field',
+      'help' => t('Provide a link to the edit form for the entity_chains.'),
+      'handler' => 'entity_chains_handler_edit_link_field',
     ),
   );
-  $data['entity_chain']['delete_chain'] = array(
+  $data['entity_chains']['delete_chain'] = array(
     'field' => array(
       'title' => t('Delete Link'),
-      'help' => t('Provide a link to delete the entity_chain.'),
-      'handler' => 'entity_chain_handler_delete_link_field',
+      'help' => t('Provide a link to delete the entity_chains.'),
+      'handler' => 'entity_chains_handler_delete_link_field',
     ),
   );
   // This content of this field are decided based on the menu structure that
-  // follows chains/chain/%entity_chain_id/op
-  $data['entity_chain']['operations'] = array(
+  // follows chains/chain/%entity_chains_id/op
+  $data['entity_chains']['operations'] = array(
     'field' => array(
       'title' => t('Operations links'),
-      'help' => t('Display all operations available for this entity_chain.'),
-      'handler' => 'entity_chain_handler_entity_chain_operations_field',
+      'help' => t('Display all operations available for this entity_chains.'),
+      'handler' => 'entity_chains_handler_entity_chains_operations_field',
     ),
   );
 }
@@ -46,12 +46,12 @@ function entity_chain_views_data_alter(&$data) {
 /**
  * Implements hook_views_default_views().
  */
-function entity_chain_views_default_views() {
+function entity_chains_views_default_views() {
   $view = new view();
   $view->name = 'chains';
   $view->description = '';
   $view->tag = 'default';
-  $view->base_table = 'entity_chain';
+  $view->base_table = 'entity_chains';
   $view->human_name = 'Chains';
   $view->core = 7;
   $view->api_version = '3.0';
@@ -67,13 +67,13 @@ function entity_chain_views_default_views() {
   $handler->display->display_options['pager']['type'] = 'full';
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
-    'entity_chain_id' => 'entity_chain_id',
+    'entity_chains_id' => 'entity_chains_id',
     'name' => 'name',
     'operations' => 'operations',
   );
   $handler->display->display_options['style_options']['default'] = '-1';
   $handler->display->display_options['style_options']['info'] = array(
-    'entity_chain_id' => array(
+    'entity_chains_id' => array(
       'sortable' => 0,
       'default_sort_order' => 'asc',
       'align' => '',
@@ -94,16 +94,16 @@ function entity_chain_views_default_views() {
     ),
   );
   /* Field: Chain: Chain ID */
-  $handler->display->display_options['fields']['entity_chain_id']['id'] = 'entity_chain_id';
-  $handler->display->display_options['fields']['entity_chain_id']['table'] = 'entity_chain';
-  $handler->display->display_options['fields']['entity_chain_id']['field'] = 'entity_chain_id';
+  $handler->display->display_options['fields']['entity_chains_id']['id'] = 'entity_chains_id';
+  $handler->display->display_options['fields']['entity_chains_id']['table'] = 'entity_chains';
+  $handler->display->display_options['fields']['entity_chains_id']['field'] = 'entity_chains_id';
   /* Field: Chain: Name */
   $handler->display->display_options['fields']['name']['id'] = 'name';
-  $handler->display->display_options['fields']['name']['table'] = 'entity_chain';
+  $handler->display->display_options['fields']['name']['table'] = 'entity_chains';
   $handler->display->display_options['fields']['name']['field'] = 'name';
   /* Field: Chain: Operations links */
   $handler->display->display_options['fields']['operations']['id'] = 'operations';
-  $handler->display->display_options['fields']['operations']['table'] = 'entity_chain';
+  $handler->display->display_options['fields']['operations']['table'] = 'entity_chains';
   $handler->display->display_options['fields']['operations']['field'] = 'operations';
 
   /* Display: Page */

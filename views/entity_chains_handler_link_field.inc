@@ -6,11 +6,11 @@
  * as fields.
  */
 
-class entity_chain_handler_link_field extends views_handler_field {
+class entity_chains_handler_link_field extends views_handler_field {
   function construct() {
     parent::construct();
 
-    $this->additional_fields['entity_chain_id'] = 'entity_chain_id';
+    $this->additional_fields['entity_chains_id'] = 'entity_chains_id';
     $this->additional_fields['type'] = 'type';
   }
 
@@ -39,8 +39,8 @@ class entity_chain_handler_link_field extends views_handler_field {
 
   function render($values) {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('view');
-    $entity_chain_id = $values->{$this->aliases['entity_chain_id']};
+    $entity_chains_id = $values->{$this->aliases['entity_chains_id']};
 
-    return l($text, 'chain/' . $entity_chain_id);
+    return l($text, 'chain/' . $entity_chains_id);
   }
 }
