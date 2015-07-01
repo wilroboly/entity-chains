@@ -1,0 +1,489 @@
+<?php
+
+/**
+ * @file
+ * Module for the Chain Entity - a starting point to create your own Entity
+ * and associated administration interface
+ */  
+
+
+/**
+ * Implement hook_entity_info().
+ *
+ * We define two entities here - the actual entity that will hold our domain
+ * specific information and an entity that holds information about the different
+ * types of entities. See here: http://drupal.org/node/977380 for a discussion on this
+ * choice.
+ */
+function entity_chain_entity_info() {
+  $return['entity_chain'] = array(
+    'label' => t('Chain'),
+    // The entity class and controller class extend the classes provided by the
+    // Entity API
+    'entity class' => 'EntityChain',
+    'controller class' => 'EntityChainController',
+    'base table' => 'entity_chain',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+        'id' => 'entity_chain_id',
+        'bundle' => 'type',
+    ),
+    // Bundles are defined by the chain types below
+    'bundles' => array(),
+    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'creation callback' => 'entity_chain_create',
+    'access callback' => 'entity_chain_access',
+    'module' => 'entity_chain',
+    // The information below is used by the EntityChainUIController (which extends the EntityDefaultUIController)
+    'admin ui' => array(
+      'path' => 'admin/content/chains',
+      'file' => 'entity_chains.admin.inc',
+      'controller class' => 'EntityChainUIController',
+      'menu wildcard' => '%entity_chain',
+    ),
+  );
+  // The entity that holds information about the entity types	  
+  $return['entity_chain_type'] = array(
+    'label' => t('Chain Type'),
+    'entity class' => 'EntityChainType',
+    'controller class' => 'EntityChainTypeController',
+    'base table' => 'entity_chain_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'entity_chain',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'type',
+      'label' => 'label',
+    ),
+    'access callback' => 'entity_chain_type_access',
+    'module' => 'entity_chain',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => 'admin/structure/entity_chain_types',
+      'file' => 'entity_chains_type.admin.inc',
+      'controller class' => 'EntityChainTypeUIController',
+    ),
+  );
+
+  return $return;
+}
+
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * We are adding the info about the chain types via a hook to avoid a recursion
+ * issue as loading the chain types requires the entity info as well.
+ *
+ * @todo This needs to be improved
+ */
+function entity_chain_entity_info_alter(&$entity_info) {
+  foreach (entity_chain_get_types() as $type => $info) {
+    $entity_info['entity_chain']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/structure/entity_chain_types/manage/%entity_chain_type',
+        'real path' => 'admin/structure/entity_chain_types/manage/' . $type,
+        'bundle argument' => 4,
+        'access arguments' => array('administer chain types'),
+      ),
+    );
+  }
+}
+  
+
+/**
+ * Implements hook_permission().
+ */
+function entity_chain_permission() {
+  // We set up permisssions to manage entity types, manage all entities and the
+  // permissions for each individual entity
+  $permissions = array(
+    'administer chain types' => array(
+      'title' => t('Administer chain types'),
+      'description' => t('Create and delete fields for chain types, and set their permissions.'),
+    ),
+    'administer chains' => array(
+      'title' => t('Administer chains'),
+      'description' => t('Edit and delete all chains'),
+    ),  
+  );
+  
+  //Generate permissions per chain 
+  foreach (entity_chain_get_types() as $type) {
+    $type_name = check_plain($type->type);
+    $permissions += array(
+      "edit any $type_name chain" => array(
+        'title' => t('%type_name: Edit any chain', array('%type_name' => $type->label)),
+      ),
+      "view any $type_name chain" => array(
+        'title' => t('%type_name: View any chain', array('%type_name' => $type->label)),
+      ),
+    );
+  }
+  return $permissions;  
+}
+
+
+/**
+ * Determines whether the given user has access to a entity_chain.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $entity_chain
+ *   Optionally a chain or a chain type to check access for. If nothing is
+ *   given, access for all chains is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function entity_chain_access($op, $entity_chain = NULL, $account = NULL) {
+  if (user_access('administer chains', $account)) {
+    return TRUE;
+  }
+  if (isset($entity_chain) && $type_name = $entity_chain->type) {
+    $op = ($op == 'view') ? 'view' : 'edit';
+    if (user_access("$op any $type_name chain", $account)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+
+/**
+ * Access callback for the entity API.
+ */
+function entity_chain_type_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer chain types', $account);
+}
+
+
+/**
+ * Gets an array of all chain types, keyed by the type name.
+ *
+ * @param $type_name
+ *   If set, the type with the given name is returned.
+ * @return EntityChainType[]
+ *   Depending whether $type isset, an array of chain types or a single one.
+ */
+function entity_chain_get_types($type_name = NULL) {
+  // entity_load will get the Entity controller for our chain entity and call the load
+  // function of that object - we are loading entities by name here.
+  $types = entity_load_multiple_by_name('entity_chain_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
+}
+
+
+/**
+ * Menu argument loader; Load a chain type by string.
+ *
+ * @param $type
+ *   The machine-readable name of a chain type to load.
+ * @return
+ *   A chain type array or FALSE if $type does not exist.
+ */
+function entity_chain_type_load($type) {
+  return entity_chain_get_types($type);
+}
+
+
+/**
+ * Fetch a chain object. Make sure that the wildcard you choose 
+ * in the chain entity definition fits the function name here.
+ *
+ * @param $entity_chain_id
+ *   Integer specifying the chain id.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   A fully-loaded $entity_chain object or FALSE if it cannot be loaded.
+ *
+ * @see entity_chain_load_multiple()
+ */
+function entity_chain_load($entity_chain_id, $reset = FALSE) {
+  $entity_chains = entity_chain_load_multiple(array($entity_chain_id), array(), $reset);
+  return reset($entity_chains);
+}
+
+
+/**
+ * Load multiple chains based on certain conditions.
+ *
+ * @param $entity_chain_ids
+ *   An array of chain IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {chain} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of chain objects, indexed by entity_chain_id.
+ *
+ * @see entity_load()
+ * @see entity_chain_load()
+ */
+function entity_chain_load_multiple($entity_chain_ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('entity_chain', $entity_chain_ids, $conditions, $reset);
+}
+
+
+/**
+ * Deletes a entity_chain.
+ */
+function entity_chain_delete(EntityChain $entity_chain) {
+  $entity_chain->delete();
+}
+
+
+/**
+ * Delete multiple chains.
+ *
+ * @param $entity_chain_ids
+ *   An array of chain IDs.
+ */
+function entity_chain_delete_multiple(array $entity_chain_ids) {
+  entity_get_controller('entity_chain')->delete($entity_chain_ids);
+}
+
+
+/**
+ * Create a chain object.
+ */
+function entity_chain_create($values = array()) {
+  return entity_get_controller('entity_chain')->create($values);
+}
+
+
+/**
+ * Saves a chain to the database.
+ *
+ * @param $entity_chain
+ *   The chain object.
+ */
+function entity_chain_save($entity_chain) {
+  return entity_save('entity_chain', $entity_chain);
+}
+
+
+/**
+ * Saves a chain type to the db.
+ */
+function entity_chain_type_save($type) {
+  return entity_save('entity_chain_type', $type);
+}
+
+
+/**
+ * Deletes a chain type from the db.
+ */
+function entity_chain_type_delete(EntityChainType $type) {
+  $type->delete();
+}
+
+
+/**
+ * URI callback for chains
+ */
+function entity_chain_uri(EntityChain $entity_chain){
+  return array(
+    'path' => 'chain/' . $entity_chain->entity_chain_id,
+  );
+}
+
+
+/**
+ * Menu title callback for showing individual entities
+ */
+function entity_chain_page_title(EntityChain $entity_chain){
+  return $entity_chain->name;
+}
+
+
+/**
+ * Sets up content to show an individual chain
+ * @todo - get rid of drupal_set_title();
+ */
+function entity_chain_page_view($entity_chain, $view_mode = 'full') {    
+  $controller = entity_get_controller('entity_chain');  
+  $content = $controller->view(array($entity_chain->entity_chain_id => $entity_chain));
+  drupal_set_title($entity_chain->name);
+  return $content;
+}
+
+
+/**
+ * Implements hook_views_api().
+ */
+function entity_chain_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'entity_chain') . '/views',
+  );
+}
+
+
+/**
+ * Implement hook_theme().
+ */
+function entity_chain_theme() {
+  return array(
+    'entity_chain_add_list' => array(
+      'variables' => array('content' => array()),
+      'file' => 'entity_chains.admin.inc',
+    ),
+    'entity_chain' => array(
+      'render element' => 'elements',
+      'template' => 'entity_chain',
+    ),
+   'entity_chain_sample_data' => array(
+      'variables' => array('entity_chain_sample_data', 'entity_chain' => NULL),
+      'template' => 'entity-chain-sample-data',
+    ),
+
+
+  );
+}  
+
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function entity_chain_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/structure/chains/add' on 'admin/structure/chains'.
+  if ($root_path == 'admin/content/chains') {
+    $item = menu_get_item('admin/content/chains/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+
+/**
+ * The class used for chain entities
+ */
+class EntityChain extends Entity {
+  
+  public function __construct($values = array()) {
+    parent::__construct($values, 'entity_chain');
+  }
+
+  protected function defaultLabel() {
+    return $this->name;
+  }
+
+  protected function defaultUri() {
+    return array('path' => 'chain/' . $this->entity_chain_id);
+  }
+  
+  
+}
+
+
+/**
+ * The class used for chain type entities
+ */
+class EntityChainType extends Entity {
+  
+  public $type;
+  public $label;
+  
+  public function __construct($values = array()) {
+    parent::__construct($values, 'entity_chain_type');
+  }
+  
+}
+
+
+/**
+ * The Controller for Chain entities
+ */
+class EntityChainController extends EntityAPIController {
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+
+  /**
+   * Create a chain - we first set up the values that are specific
+   * to our chain schema but then also go through the EntityAPIController
+   * function.
+   * 
+   * @param $type
+   *   The machine-readable type of the entity_chain.
+   *
+   * @return
+   *   A chain object with all default fields initialized.
+   */
+  public function create(array $values = array()) {
+    // Add values that are specific to our Chain
+    $values += array( 
+      'entity_chain_id' => '',
+      'is_new' => TRUE,
+      'title' => '',
+      'created' => '',
+      'changed' => '',
+      'data' => '',
+    );
+    
+    $entity_chain = parent::create($values);
+    return $entity_chain;
+  }
+  
+  /**
+   * Overriding the buldContent function to add entity specific fields
+   */
+  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
+    $content = parent::buildContent($entity, $view_mode, $langcode, $content);
+    $content['entity_chain_sample_data'] =  array(
+      '#markup' => theme('entity_chain_sample_data', array('entity_chain_sample_data' => check_plain($entity->data['sample_data']), 'chain' => $entity)),
+    );
+
+    return $content;
+  }
+  
+}
+
+
+/**
+ * The Controller for EntityChain entities
+ */
+class EntityChainTypeController extends EntityAPIControllerExportable {
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+  
+   /**
+   * Create a chain type - we first set up the values that are specific
+   * to our chain type schema but then also go through the EntityAPIController
+   * function.
+   * 
+   * @param $type
+   *   The machine-readable type of the entity_chain.
+   *
+   * @return
+   *   A chain type object with all default fields initialized.
+   */
+  public function create(array $values = array()) {
+    // Add values that are specific to our Chain
+    $values += array( 
+      'id' => '',
+      'is_new' => TRUE,
+      'data' => '',
+    );
+    $entity_chain_type = parent::create($values);
+    return $entity_chain_type;
+  }
+
+}

@@ -1,0 +1,14 @@
+name = Chain
+description = Provides entity functionality as an example to use in your own development projects
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = views
+
+files[] = entity_chains.admin.inc
+files[] = entity_chains_type.admin.inc
+files[] = views/entity_chains.views_default.inc
+files[] = views/entity_chains_handler_link_field.inc
+files[] = views/entity_chains_handler_delete_link_field.inc
+files[] = views/entity_chains_handler_edit_link_field.inc
+files[] = views/entity_chains_handler_entity_chains_operations_field.inc
